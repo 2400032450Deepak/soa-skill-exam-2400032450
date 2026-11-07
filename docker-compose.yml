@@ -1,0 +1,50 @@
+name: soa-skill-exam
+
+services:
+
+  postgresdb:
+    image: postgres:16-alpine
+    container_name: postgresdb
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: exam123
+      POSTGRES_DB: teammemberdb
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d teammemberdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    image: docker-skill-exam-2400032450:latest
+
+    build:
+      context: ./TeamMemberRestApi
+      dockerfile: Dockerfile
+
+    container_name: teammember-backend
+    restart: unless-stopped
+
+    ports:
+      - "2450:8080"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresdb:5432/teammemberdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: exam123
+
+    depends_on:
+      postgresdb:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
